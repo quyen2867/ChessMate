@@ -14,7 +14,7 @@ export const PROVIDER_PRESETS = {
   gemini: {
     name: 'Google Gemini',
     endpoint: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: 'gemini-2.0-flash',
+    defaultModel: 'gemini-3.8-flash',
     hint: 'Lấy khóa API miễn phí tại aistudio.google.com'
   },
   openai: {
@@ -90,8 +90,9 @@ export async function explainMove({
 
   // 1. Google Gemini Native API
   if (provider === 'gemini') {
-    const targetModel = model.trim() || 'gemini-2.0-flash';
-    const fallbackModels = [targetModel, 'gemini-1.5-flash', 'gemini-2.0-flash'];
+    // gemini-2.0-flash / 1.5-flash đã bị Google khai tử (API 404) — dùng model đang sống
+    const targetModel = model.trim() || 'gemini-3.8-flash';
+    const fallbackModels = [targetModel, 'gemini-2.5-flash', 'gemini-3.8-flash'];
     let lastError = null;
 
     for (const m of [...new Set(fallbackModels)]) {

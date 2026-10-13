@@ -1,6 +1,7 @@
 import { randomDelay, dispatchMouse, bezierCurve } from './human-simulator.js';
 import { uciToSquares, squareToCoords } from '../utils/chess-utils.js';
 import { SQUARE_SELECTORS } from '../utils/constants.js';
+import { isBoardFlipped } from './board-extractor.js';
 
 function findPieceAtSquare(board, name) {
   const rank = name[1], file = name[0];
@@ -16,7 +17,9 @@ export async function executeMove(board, uci, { delayMin = 800, delayMax = 2500 
   if (!parsed) throw new Error('Invalid UCI move: ' + uci);
 
   const rect = board.getBoundingClientRect();
-  const flipped = board.classList.contains('flipped');
+  // Dùng cùng logic phát hiện bàn cờ lật với board-extractor (class, data-attribute, tọa độ),
+  // vì chess.com không phải lúc nào cũng đánh dấu bằng class "flipped".
+  const flipped = isBoardFlipped(board);
   const startPos = squareToCoords(parsed.from, rect, flipped);
   const endPos = squareToCoords(parsed.to, rect, flipped);
 

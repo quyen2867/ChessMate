@@ -21,7 +21,7 @@ export class ChatHUD {
     this.lastBestMove = null;
     this.lastEvaluation = 0;
     this.lastEfficiencyNote = null;
-    this.activeMode = 'fastest_win';
+    this.activeMode = 'mate_hunt'; // đồng bộ với DEFAULT_CONFIG.thinkingMode
     this.config = {};
     this.isAnalyzing = false;
     this.userColor = 'w';

@@ -163,3 +163,25 @@ test('getPieceOnSquare and getSquareCenter locate real DOM piece accurately', as
   assert.equal(centerF3.y, 360);
 });
 
+
+test('isBoardFlipped detects flip via data-orientation even without flipped class (autoPlay regression)', () => {
+  // chess.com không phải lúc nào cũng gắn class "flipped" — move-executor trước đây
+  // chỉ check classList.contains('flipped') nên click nhầm ô khi bàn cờ lật kiểu khác.
+  const mockBoard = {
+    classList: { contains: (c) => c === 'board' },
+    getAttribute: (name) => name === 'data-orientation' ? 'black' : null,
+    parentElement: null,
+    closest: () => null,
+    querySelectorAll: () => []
+  };
+  assert.equal(isBoardFlipped(mockBoard), true, 'Phai phat hien ban co lat qua data-orientation="black"');
+
+  const normalBoard = {
+    classList: { contains: () => false },
+    getAttribute: () => null,
+    parentElement: null,
+    closest: () => null,
+    querySelectorAll: () => []
+  };
+  assert.equal(isBoardFlipped(normalBoard), false, 'Ban co trang khong bi danh dau lat');
+});

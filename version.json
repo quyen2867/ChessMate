@@ -1,8 +1,12 @@
 {
-  "version": "0.1.2",
+  "version": "0.1.4",
   "name": "ChessMate AI Agent",
-  "releaseDate": "2026-09-26",
+  "releaseDate": "2026-10-13",
   "changelog": [
+    "Sửa autoPlay click nhầm ô khi bàn cờ lật (dùng chung logic phát hiện lật với board-extractor)",
+    "Sửa AI giải thích: model Gemini mặc định gemini-2.0-flash đã bị Google khai tử (404) -> gemini-3.8-flash",
+    "Thêm chế độ 'Đường Đi Ngắn Nhất' vào popup (trước đây chỉ có trong HUD, popup không chọn được)",
+    "Đồng bộ chế độ tư duy mặc định của HUD với cấu hình (mate_hunt)",
     "Khắc phục triệt để lỗi FEN tĩnh, đọc chuẩn xác 100% quân cờ thực tế",
     "Giao diện HUD chống tràn dòng, hiển thị điểm số và tương quan lực lượng",
     "Hệ thống Phong Cấp toàn diện (Hậu, Mã underpromotion, Xe chống bẫy pat, Tượng)",
