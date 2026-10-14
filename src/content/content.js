@@ -92,18 +92,65 @@ function flashTurnTitle() {
 }
 
 // ---- Đọc gợi ý bằng giọng nói tiếng Việt (Web Speech API, không cần mạng) ----
+let _ttsUnlocked = false;
+function unlockSpeech() {
+  if (_ttsUnlocked) return;
+  _ttsUnlocked = true;
+  try {
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+    // iOS/WebKit: cần một lần speak() trong user gesture để mở khóa speech.
+    synth.getVoices();
+    synth.speak(new SpeechSynthesisUtterance(''));
+  } catch (_) {}
+}
+// Mở khóa ngay ở gesture đầu tiên của user trên trang
+['pointerdown', 'touchstart', 'keydown'].forEach((ev) =>
+  document.addEventListener(ev, unlockSpeech, { once: true, passive: true, capture: true })
+);
+
+function pickVietnameseVoice() {
+  try {
+    const voices = window.speechSynthesis?.getVoices?.() || [];
+    return voices.find((v) => (v.lang || '').toLowerCase().startsWith('vi')) || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function speakText(text) {
+  const synth = window.speechSynthesis;
+  if (!synth || !text) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'vi-VN';
+  const voice = pickVietnameseVoice();
+  if (voice) utter.voice = voice;
+  utter.rate = 1.05;
+  utter.pitch = 1;
+  synth.speak(utter);
+}
+
 function speakSuggestion(uci, fen) {
   try {
     const synth = window.speechSynthesis;
     if (!synth) return;
-    synth.cancel(); // dừng câu đang đọc dở nếu có
     const t = translateMoveToVietnamese(uci, fen);
     const text = t.short || t.title || uci;
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'vi-VN';
-    utter.rate = 1.05;
-    utter.pitch = 1;
-    synth.speak(utter);
+    // iOS nuốt utterance nếu gọi speak() ngay sau cancel(): chỉ cancel khi đang
+    // đọc dở và đợi một nhịp rồi mới đọc câu mới.
+    if (synth.speaking) {
+      synth.cancel();
+      setTimeout(() => { try { speakText(text); } catch (_) {} }, 120);
+    } else {
+      speakText(text);
+    }
+  } catch (_) {}
+}
+
+// Câu mẫu để user bấm "Nghe thử" trong popup kiểm tra giọng đọc
+function speakTestVoice() {
+  try {
+    speakText('Tốt E 2 đi E 4. Trắng ưu thế nhẹ.');
   } catch (_) {}
 }
 
@@ -304,7 +351,9 @@ async function analyzeCurrentState(forcedFen = null, force = false) {
 
   // Ponder HIT: đối thủ đi đúng nước đã dự đoán -> dùng kết quả tính trước ngay,
   // không cần chờ engine chạy lại từ đầu.
-  if (!forcedFen && !force && ponderState && ponderState.fen === fen && ponderState.result) {
+  // (Lưu ý: nhánh này phải chạy được cả khi fen được truyền trực tiếp từ
+  // move-detected, vì đó chính là luồng "đối thủ vừa đi" phổ biến nhất.)
+  if (!force && ponderState && ponderState.fen === fen && ponderState.result) {
     const cached = ponderState.result;
     ponderState = null;
     lastAnalyzedFEN = fen;
@@ -343,7 +392,16 @@ async function analyzeCurrentState(forcedFen = null, force = false) {
 
   try {
     logger.info('Analyzing FEN:', fen, 'Mode:', config.thinkingMode);
-    const best = await engine.getBestMove(fen, config);
+    // Safety net: đường engine qua service worker không có timeout riêng —
+    // nếu response bị mất, await sẽ treo mãi và isAnalyzing kẹt ở true khiến
+    // mọi nước đi sau đó không được phân tích. Race với timeout để tự phục hồi.
+    const analysisTimeoutMs = (config.movetime ?? 1600) + 10000;
+    const best = await Promise.race([
+      engine.getBestMove(fen, config),
+      new Promise((_, reject) => setTimeout(() => {
+        reject(new Error('Engine timeout'));
+      }, analysisTimeoutMs))
+    ]);
 
     if (!config.enabled) {
       overlay?.clear();
@@ -360,6 +418,20 @@ async function analyzeCurrentState(forcedFen = null, force = false) {
   } catch (e) {
     if (e.message === 'Cancelled') {
       logger.info('[ChessMate] Previous engine analysis cancelled for newer board position.');
+      return;
+    }
+    if (e.message === 'Engine timeout') {
+      // Engine treo không trả kết quả: dừng hẳn rồi thử lại 1 lần cho thế cờ này.
+      logger.warn('[ChessMate] Engine timeout — stopping and retrying once for FEN:', fen);
+      try { engine.stop(); } catch (_) {}
+      chatHud?.status('Engine: quá thời gian, đang thử lại...', true);
+      const retryToken = _analysisToken;
+      setTimeout(() => {
+        if (retryToken === _analysisToken && !isAnalyzing && config?.enabled) {
+          lastAnalyzedFEN = null;
+          analyzeCurrentState(fen, true);
+        }
+      }, 600);
       return;
     }
     logger.warn('Analysis error:', e);
@@ -399,6 +471,7 @@ async function boot() {
 
   let unsubscribeMove = null;
   let unsubscribeNewGame = null;
+  let unsubscribeBoardReplaced = null;
 
   const initBoard = (b) => {
     if (!b) return;
@@ -408,6 +481,7 @@ async function boot() {
       logger.info('[ChessMate] Cleaning up previous board session before attaching new board');
       unsubscribeMove?.();
       unsubscribeNewGame?.();
+      unsubscribeBoardReplaced?.();
       overlay?.destroy();
       startNewGameSession('board_replaced');
     }
@@ -422,6 +496,18 @@ async function boot() {
 
     unsubscribeNewGame = observer.on('new-game', ({ reason }) => {
       startNewGameSession(reason);
+      setTimeout(() => analyzeCurrentState(), 300);
+    });
+
+    // Board bị trang thay element giữa ván: dựng lại overlay trên board mới,
+    // giữ nguyên session (không reset như new-game).
+    unsubscribeBoardReplaced = observer.on('board-replaced', ({ board: freshBoard }) => {
+      if (!freshBoard || freshBoard === board) return;
+      logger.info('[ChessMate] Re-attaching overlay to replaced board element.');
+      try { overlay?.destroy(); } catch (_) {}
+      board = freshBoard;
+      overlay = new Overlay(board);
+      lastAnalyzedFEN = null;
       setTimeout(() => analyzeCurrentState(), 300);
     });
 
@@ -505,6 +591,10 @@ async function boot() {
     }
     if (msg?.type === 'show_hud') {
       chatHud?.show();
+    }
+    if (msg?.type === 'chessmate-test-tts') {
+      unlockSpeech();
+      speakTestVoice();
     }
   });
 }

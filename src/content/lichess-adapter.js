@@ -378,6 +378,18 @@ export class LichessObserver {
 
   check(force = false) {
     if (document.visibilityState === 'hidden') return;
+    // Tương tự BoardObserver: bám lại board mới nếu element cũ bị thay.
+    if (this.board && !this.board.isConnected) {
+      const fresh = findLichessBoard();
+      if (fresh && fresh !== this.board) {
+        logger.info('[ChessMate] Lichess board element was replaced; re-attaching.');
+        this.board = fresh;
+        this.initObserver();
+        this.emit('board-replaced', { board: fresh });
+      } else {
+        return;
+      }
+    }
     const fen = this.getCurrentFEN();
     if (!fen) return;
     if (!force && fen === this.lastFEN) return;

@@ -395,6 +395,17 @@ async function init() {
     $('toggleApiKeyVis').textContent = isPasswordHidden ? 'XEM' : 'ẨN';
   };
 
+  // Nút "Nghe thử giọng đọc": gửi message cho content script đọc câu mẫu.
+  // Giúp kiểm tra nhanh TTS có hoạt động trên máy không (cần voice tiếng Việt).
+  const testTtsBtn = $('testTts');
+  if (testTtsBtn) {
+    testTtsBtn.onclick = async () => {
+      await notifyActiveTab({ type: 'chessmate-test-tts' });
+      testTtsBtn.textContent = '🔊 Đang đọc thử...';
+      setTimeout(() => { testTtsBtn.textContent = '🔊 Nghe thử giọng đọc'; }, 2500);
+    };
+  }
+
   // 1. Nút "Lưu Cấu Hình Game"
   $('saveGameConfig').onclick = async () => {
     const isAuto = document.querySelector('input[name=mode]:checked')?.value === 'auto';

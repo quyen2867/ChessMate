@@ -86,6 +86,20 @@ export class BoardObserver {
 
   check(force = false) {
     if (document.visibilityState === 'hidden') return;
+    // Chess.com SPA thỉnh thoảng thay cả element bàn cờ (re-render) mà không đổi
+    // URL — observer đang treo trên node cũ sẽ không bao giờ thấy nước mới.
+    // Phát hiện node bị detach và bám lại board mới.
+    if (this.board && !this.board.isConnected) {
+      const fresh = findBoardElement();
+      if (fresh && fresh !== this.board) {
+        logger.info('[ChessMate] Board element was replaced by the page; re-attaching observer.');
+        this.board = fresh;
+        this.initObserver();
+        this.emit('board-replaced', { board: fresh });
+      } else {
+        return;
+      }
+    }
     const fen = this.getCurrentFEN();
     if (!fen) return;
     if (!force && fen === this.lastFEN) return;

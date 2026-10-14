@@ -355,6 +355,19 @@ input:checked + .toggle-track:before {
   width: 100%;
 }
 
+.btn-small {
+  height: 26px;
+  font-size: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+  background: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #374151;
+}
+.btn-small:hover {
+  background: #374151;
+}
+
 .btn-accent {
   background: var(--signal-ochre);
   color: #0c0e12;
