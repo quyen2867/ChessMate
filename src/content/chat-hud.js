@@ -1035,11 +1035,12 @@ export class ChatHUD {
     }
   }
 
-  updateAnalysis({ fen, uci, evaluation, depth, userColor = 'w', isMyTurn = true, playedMoves = [], efficiencyNote = null }) {
+  updateAnalysis({ fen, uci, evaluation, depth, userColor = 'w', isMyTurn = true, playedMoves = [], efficiencyNote = null, candidates = [] }) {
     this.currentFen = fen;
     this.lastBestMove = uci;
     this.lastEvaluation = evaluation;
     this.lastEfficiencyNote = efficiencyNote;
+    this.topCandidates = Array.isArray(candidates) ? candidates : [];
     this.userColor = this.sideOverride || userColor;
 
     // Detect actual move color from the piece on the from-square
@@ -1209,6 +1210,30 @@ export class ChatHUD {
         </div>
       ` : '';
 
+      // Top 3 nước gợi ý (engine đã tính MultiPV sẵn) — giúp user có phương án B/C
+      let topMovesHtml = '';
+      if (this.config.showTopMoves !== false && Array.isArray(this.topCandidates) && this.topCandidates.length > 1) {
+        const rows = this.topCandidates.slice(0, 3).map((c, i) => {
+          const ct = translateMoveToVietnamese(c.move, this.currentFen);
+          const ce = formatEvaluationParts(c.evaluation);
+          const rankColor = i === 0 ? '#22c55e' : i === 1 ? '#38bdf8' : '#a78bfa';
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border-top:1px solid rgba(255,255,255,0.06);font-size:11px;">
+              <span>
+                <strong style="color:${rankColor};margin-right:6px;">#${i + 1}</strong>
+                <span style="color:#e5e7eb;font-weight:600;">${c.move.toUpperCase()}</span>
+                <span style="color:#9ca3af;"> — ${ct.short || ct.title}</span>
+              </span>
+              <span class="cm-eval-chip" style="font-size:10px;" title="${ce.full}">${ce.numeric}</span>
+            </div>`;
+        }).join('');
+        topMovesHtml = `
+          <div style="margin-top:6px;border:1px solid rgba(255,255,255,0.1);border-radius:4px;background:rgba(255,255,255,0.03);overflow:hidden;">
+            <div style="padding:5px 8px;font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:0.4px;">TOP 3 NƯỚC GỢI Ý</div>
+            ${rows}
+          </div>`;
+      }
+
       if (this.isMyTurn) {
         // CASE: OUR TURN
         const promoBoxHtml = translation.promotion ? `
@@ -1248,6 +1273,7 @@ export class ChatHUD {
             ${stratBoxHtml}
             ${efficiencyHtml}
             ${promoBoxHtml}
+            ${topMovesHtml}
 
             <div class="cm-explain-box">
               <button class="cm-btn-explain" id="cm-btn-ai-explain">

@@ -169,7 +169,18 @@ export class EngineManager {
             evaluation: optimal.evaluation ?? this.lastEvaluation,
             mateIn: optimal.mateIn,
             efficiencyNote: optimal.efficiencyNote,
-            pv: optimal.pv
+            pv: optimal.pv,
+            // Top candidate moves (MultiPV) for the "top 3 suggestions" HUD.
+            // Sorted by multipv rank so index 0 is always the engine's best.
+            candidates: candidatesList
+              .map(c => ({
+                multipv: c.multipv,
+                move: c.move,
+                evaluation: c.evaluation,
+                scoreCp: c.scoreCp,
+                mateIn: c.mateIn
+              }))
+              .sort((a, b) => a.multipv - b.multipv)
           });
         }
       }

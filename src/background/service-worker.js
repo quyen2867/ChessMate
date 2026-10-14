@@ -50,6 +50,9 @@ chrome.runtime.onInstalled.addListener(() => {
         showOverlay: true,
         showArrows: true,
         showHud: true,
+        showTopMoves: true,
+        turnChime: true,
+        ponder: true,
         hudMinimized: false
       });
     }

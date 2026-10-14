@@ -1,8 +1,11 @@
 {
-  "version": "0.1.8",
+  "version": "0.1.9",
   "name": "ChessMate AI Agent",
   "releaseDate": "2026-10-14",
   "changelog": [
+    "Hiện TOP 3 nước gợi ý trong HUD (tận dụng MultiPV 3 engine đã tính sẵn)",
+    "Chuông báo + nháy tiêu đề tab khi đến lượt bạn (kèm công tắc trong popup)",
+    "Tính trước khi đối thủ đang nghĩ (ponder): đoán nước đối thủ, tính sẵn nước đáp trả — đến lượt là có ngay gợi ý/AutoPlay",
     "Sửa autoPlay click nhầm ô khi bàn cờ lật (dùng chung logic phát hiện lật với board-extractor)",
     "Sửa AI giải thích: model Gemini mặc định gemini-2.0-flash đã bị Google khai tử (404) -> gemini-3.8-flash",
     "Thêm chế độ 'Đường Đi Ngắn Nhất' vào popup (trước đây chỉ có trong HUD, popup không chọn được)",

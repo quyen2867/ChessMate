@@ -241,3 +241,109 @@ export function formatEvaluationParts(evaluation) {
 export function formatEvaluationVi(evaluation) {
   return formatEvaluationParts(evaluation).full;
 }
+
+/**
+ * Applies a UCI move (e.g. 'e2e4', 'e7e8q') to a FEN string and returns the
+ * resulting FEN. Handles captures, promotion, castling and en passant, and
+ * updates turn, castling rights, en-passant square and move clocks.
+ * Used by the pondering feature to predict the position after the opponent's
+ * most likely reply. Returns null if the move cannot be applied.
+ */
+export function applyUciMove(fen, uci) {
+  try {
+    const parts = String(fen || '').trim().split(/\s+/);
+    if (parts.length < 4) return null;
+    const [placement, turn, castling, ep] = parts;
+    void placement;
+    let halfmove = parseInt(parts[4] || '0', 10);
+    let fullmove = parseInt(parts[5] || '1', 10);
+
+    const board = fenToBoard(fen);
+    if (!board) return null;
+    const move = String(uci || '').toLowerCase();
+    if (move.length < 4) return null;
+
+    const from = squareToIndices(move.slice(0, 2));
+    const to = squareToIndices(move.slice(2, 4));
+    const promo = move[4] || null;
+    if (!from || !to) return null;
+
+    const piece = board[from.row][from.col];
+    if (!piece) return null;
+    const isWhite = piece === piece.toUpperCase();
+    const pieceLower = piece.toLowerCase();
+
+    const target = board[to.row][to.col];
+    const isCapture = Boolean(target);
+    const isPawn = pieceLower === 'p';
+
+    // En passant capture: pawn moves diagonally onto the ep square (which is empty)
+    let epCapture = null;
+    if (isPawn && !target && ep !== '-' && move.slice(2, 4) === ep && Math.abs(to.col - from.col) === 1) {
+      epCapture = { row: from.row, col: to.col };
+    }
+
+    // Move the piece
+    board[from.row][from.col] = null;
+    let placed = piece;
+    if (promo && isPawn) {
+      placed = isWhite ? promo.toUpperCase() : promo.toLowerCase();
+    }
+    board[to.row][to.col] = placed;
+    if (epCapture) board[epCapture.row][epCapture.col] = null;
+
+    // Castling: king moves two files -> also move the rook
+    if (pieceLower === 'k' && Math.abs(to.col - from.col) === 2) {
+      const rookFromCol = to.col > from.col ? 7 : 0;
+      const rookToCol = to.col > from.col ? 5 : 3;
+      const rook = board[from.row][rookFromCol];
+      board[from.row][rookFromCol] = null;
+      board[from.row][rookToCol] = rook;
+    }
+
+    // Update castling rights
+    let rights = castling === '-' ? '' : castling;
+    const removeRight = (r) => { rights = rights.replace(r, ''); };
+    if (pieceLower === 'k') {
+      if (isWhite) { removeRight('K'); removeRight('Q'); }
+      else { removeRight('k'); removeRight('q'); }
+    }
+    // Rook home squares: row 7 = rank 1 (white), row 0 = rank 8 (black)
+    const cornerRights = { '7,0': 'Q', '7,7': 'K', '0,0': 'q', '0,7': 'k' };
+    const fromKey = `${from.row},${from.col}`;
+    if (cornerRights[fromKey]) removeRight(cornerRights[fromKey]);
+    // A rook captured on its home square also loses the right
+    const toKey = `${to.row},${to.col}`;
+    if (isCapture && cornerRights[toKey]) removeRight(cornerRights[toKey]);
+    if (!rights) rights = '-';
+
+    // New en-passant square after a pawn double push
+    let newEp = '-';
+    if (isPawn && Math.abs(to.row - from.row) === 2) {
+      const epRow = (from.row + to.row) / 2;
+      newEp = 'abcdefgh'[from.col] + String(8 - epRow);
+    }
+
+    // Clocks
+    halfmove = (isPawn || isCapture || epCapture) ? 0 : halfmove + 1;
+    if (turn === 'b') fullmove += 1;
+    const newTurn = turn === 'w' ? 'b' : 'w';
+
+    // Serialize placement
+    const rows = board.map(boardRow => {
+      let s = '';
+      let empty = 0;
+      for (const cell of boardRow) {
+        if (!cell) { empty++; continue; }
+        if (empty) { s += empty; empty = 0; }
+        s += cell;
+      }
+      if (empty) s += empty;
+      return s;
+    });
+
+    return `${rows.join('/')} ${newTurn} ${rights} ${newEp} ${halfmove} ${fullmove}`;
+  } catch (_) {
+    return null;
+  }
+}

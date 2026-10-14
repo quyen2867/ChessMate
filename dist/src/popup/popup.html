@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CHESSMATE - HỆ THỐNG TRỢ THỦ</title>
-  <script type="module" crossorigin src="/assets/popup-DtTSYf-T.js"></script>
+  <script type="module" crossorigin src="/assets/popup-CMGIh2Ix.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-P2Xu9kJm.js">
-  <link rel="modulepreload" crossorigin href="/assets/board-evaluator-C2qLjeiz.js">
-  <link rel="modulepreload" crossorigin href="/assets/llm-client-CWXObNzH.js">
+  <link rel="modulepreload" crossorigin href="/assets/board-evaluator-BWMLEWCJ.js">
+  <link rel="modulepreload" crossorigin href="/assets/llm-client-DyuWgAMc.js">
   <link rel="stylesheet" crossorigin href="/assets/popup-BIiElxvR.css">
 </head>
 <body>
@@ -34,6 +34,7 @@
         <div class="field-block">
           <label for="thinkingMode" class="field-label">Mục tiêu chiến thuật</label>
           <select id="thinkingMode" class="field-select">
+            <option value="fastest_win">Đường Đi Ngắn Nhất (Shortest &amp; Direct)</option>
             <option value="mate_hunt">Săn Chiếu Hết (Mate Hunter)</option>
             <option value="solid_defense">Phòng Thủ & Cầu Hòa (Iron Defense)</option>
             <option value="aggressive">Tấn Công Dồn Ép (Aggressive Attack)</option>
@@ -73,6 +74,23 @@
           </div>
         </div>
 
+        <div class="grid-pair">
+          <div class="field-block">
+            <div class="label-row">
+              <span class="field-label">Delay min (ms)</span>
+              <output id="delayMinOut" class="metric-badge">800</output>
+            </div>
+            <input id="delayMin" type="range" min="0" max="5000" step="100" value="800" class="field-slider">
+          </div>
+          <div class="field-block">
+            <div class="label-row">
+              <span class="field-label">Delay max (ms)</span>
+              <output id="delayMaxOut" class="metric-badge">2500</output>
+            </div>
+            <input id="delayMax" type="range" min="0" max="8000" step="100" value="2500" class="field-slider">
+          </div>
+        </div>
+
         <div class="field-block stack-gap">
           <label class="check-item">
             <input id="showHud" type="checkbox" checked>
@@ -81,6 +99,18 @@
           <label class="check-item">
             <input id="showArrows" type="checkbox" checked>
             <span class="check-label">Vẽ mũi tên gợi ý trên bàn cờ</span>
+          </label>
+          <label class="check-item">
+            <input id="showTopMoves" type="checkbox" checked>
+            <span class="check-label">Hiện top 3 nước gợi ý</span>
+          </label>
+          <label class="check-item">
+            <input id="turnChime" type="checkbox" checked>
+            <span class="check-label">Chuông báo khi đến lượt bạn</span>
+          </label>
+          <label class="check-item">
+            <input id="ponder" type="checkbox" checked>
+            <span class="check-label">Tính trước khi đối thủ đang nghĩ (gợi ý nhanh hơn)</span>
           </label>
         </div>
 

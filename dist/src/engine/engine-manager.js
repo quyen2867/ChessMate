@@ -14,6 +14,10 @@ export class EngineManager {
     this.currentAnalyzingFen = null;
     this.currentAnalyzingColor = 'w';
     this.forceLocalWorker = false;
+    // Stale-bestmove guard: số lượng 'bestmove' cũ đang trên đường tới (từ các
+    // lần search đã bị stop). Mỗi bestmove cũ phải bị loại bỏ, không được
+    // resolve promise của lần phân tích mới hơn.
+    this.staleBestmoveDebt = 0;
   }
 
   isContentScript() {
@@ -132,6 +136,15 @@ export class EngineManager {
 
     if (text.startsWith('bestmove')) {
       this.isSearching = false;
+      // Stale-bestmove guard: bestmove này thuộc về một lần search đã bị stop
+      // (xảy ra khi nước đi mới đến lúc Stockfish vừa tính xong nước cũ).
+      // Loại bỏ nó để không resolve nhầm promise của lần phân tích mới hơn
+      // bằng nước đi của thế cờ cũ.
+      if (this.staleBestmoveDebt > 0) {
+        this.staleBestmoveDebt--;
+        logger.info('[ChessMate] Discarded stale bestmove from aborted search.');
+        return;
+      }
       if (this.pending) {
         const parts = text.split(/\s+/);
         const defaultMove = parts[1];
@@ -156,7 +169,18 @@ export class EngineManager {
             evaluation: optimal.evaluation ?? this.lastEvaluation,
             mateIn: optimal.mateIn,
             efficiencyNote: optimal.efficiencyNote,
-            pv: optimal.pv
+            pv: optimal.pv,
+            // Top candidate moves (MultiPV) for the "top 3 suggestions" HUD.
+            // Sorted by multipv rank so index 0 is always the engine's best.
+            candidates: candidatesList
+              .map(c => ({
+                multipv: c.multipv,
+                move: c.move,
+                evaluation: c.evaluation,
+                scoreCp: c.scoreCp,
+                mateIn: c.mateIn
+              }))
+              .sort((a, b) => a.multipv - b.multipv)
           });
         }
       }
@@ -385,6 +409,10 @@ export class EngineManager {
       try {
         this.worker.postMessage('stop');
       } catch (_) {}
+      // Engine đang search: Stockfish chắc chắn sẽ (hoặc đã) trả về một
+      // 'bestmove' cho lần search này. Ghi nợ để loại bỏ nó khi đến,
+      // tránh resolve nhầm promise của lần phân tích mới.
+      this.staleBestmoveDebt++;
     }
     this.isSearching = false;
 

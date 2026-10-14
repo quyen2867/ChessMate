@@ -310,6 +310,9 @@ async function init() {
 
   $('showHud').checked = config.showHud !== false;
   $('showArrows').checked = config.showArrows !== false;
+  $('showTopMoves').checked = config.showTopMoves !== false;
+  $('turnChime').checked = config.turnChime !== false;
+  $('ponder').checked = config.ponder !== false;
 
   $('llmProvider').value = config.llmProvider || 'gemini';
   $('llmApiKey').value = config.llmApiKey || '';
@@ -400,7 +403,10 @@ async function init() {
       delayMin: parseInt($('delayMin').value, 10),
       delayMax: parseInt($('delayMax').value, 10),
       showHud: $('showHud').checked,
-      showArrows: $('showArrows').checked
+      showArrows: $('showArrows').checked,
+      showTopMoves: $('showTopMoves').checked,
+      turnChime: $('turnChime').checked,
+      ponder: $('ponder').checked
     };
     await setConfig(updated);
     setStatus('gameStatus', '[THÀNH CÔNG] ĐÃ ÁP DỤNG CẤU HÌNH VÁN CỜ');
