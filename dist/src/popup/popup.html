@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>CHESSMATE - HỆ THỐNG TRỢ THỦ</title>
-  <script type="module" crossorigin src="/assets/popup-CMGIh2Ix.js"></script>
+  <script type="module" crossorigin src="/assets/popup-C1HAqQLp.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-P2Xu9kJm.js">
   <link rel="modulepreload" crossorigin href="/assets/board-evaluator-BWMLEWCJ.js">
-  <link rel="modulepreload" crossorigin href="/assets/llm-client-DyuWgAMc.js">
-  <link rel="stylesheet" crossorigin href="/assets/popup-BIiElxvR.css">
+  <link rel="modulepreload" crossorigin href="/assets/llm-client-DbdMQysB.js">
+  <link rel="stylesheet" crossorigin href="/assets/popup-BMMXMAiw.css">
 </head>
 <body>
   <div class="app-shell">
@@ -112,6 +112,24 @@
             <input id="ponder" type="checkbox" checked>
             <span class="check-label">Tính trước khi đối thủ đang nghĩ (gợi ý nhanh hơn)</span>
           </label>
+          <label class="check-item">
+            <input id="ttsEnabled" type="checkbox" checked>
+            <span class="check-label">Đọc gợi ý bằng giọng nói tiếng Việt</span>
+          </label>
+          <div style="margin:-4px 0 6px 26px">
+            <button id="testTts" class="btn btn-small" type="button">🔊 Nghe thử giọng đọc</button>
+          </div>
+          <label class="check-item">
+            <input id="showEvalBar" type="checkbox" checked>
+            <span class="check-label">Thanh đánh giá (eval bar) cạnh bàn cờ</span>
+          </label>
+          <label class="check-item">
+            <input id="pauseOnHidden" type="checkbox" checked>
+            <span class="check-label">Tự dừng engine khi ẩn tab (tiết kiệm pin)</span>
+          </label>
+        </div>
+        <div class="hint" style="margin-top:6px;opacity:.75;font-size:11px">
+          Phím tắt bật/tắt gợi ý nhanh: <b>Ctrl+Shift+S</b> (Mac: <b>⌘+Shift+S</b>) — đổi được tại chrome://extensions/shortcuts
         </div>
 
         <div class="btn-group">

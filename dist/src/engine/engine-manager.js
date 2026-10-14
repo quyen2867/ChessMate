@@ -18,6 +18,12 @@ export class EngineManager {
     // lần search đã bị stop). Mỗi bestmove cũ phải bị loại bỏ, không được
     // resolve promise của lần phân tích mới hơn.
     this.staleBestmoveDebt = 0;
+    // Đang chờ search cũ dừng hẳn sau khi đã gửi 'stop' (chờ 'bestmove' của nó).
+    // BẮT BUỘC chờ xong mới được gửi 'position' mới: Stockfish WASM xử lý
+    // 'position' ngay lập tức kể cả khi search cũ còn đang unwind (ASYNCIFY),
+    // mutate bàn cờ giữa chừng → crash "RuntimeError: unreachable".
+    // Lưu ý: 'isready'/'readyok' KHÔNG đảm bảo search đã dừng nên không đủ.
+    this.awaitingSearchEnd = false;
   }
 
   isContentScript() {
@@ -67,6 +73,11 @@ export class EngineManager {
         this.worker = null;
         this.ready = false;
         this.isSearching = false;
+        this.awaitingSearchEnd = false;
+        // Worker đã chết: mọi khoản nợ bestmove cũ đều vô nghĩa (bestmove của
+        // search cũ sẽ không bao giờ đến). Reset để không loại nhầm bestmove
+        // hợp lệ của worker mới được tạo lại sau này.
+        this.staleBestmoveDebt = 0;
         if (this.pending) {
           this.pending.reject?.(new Error('Engine worker reset'));
           this.pending = null;
@@ -136,6 +147,9 @@ export class EngineManager {
 
     if (text.startsWith('bestmove')) {
       this.isSearching = false;
+      // Search cũ đã dừng hẳn (dù là bestmove thật hay bị stop giữa chừng) —
+      // từ giờ gửi 'position' mới là an toàn, không còn nguy cơ crash WASM.
+      this.awaitingSearchEnd = false;
       // Stale-bestmove guard: bestmove này thuộc về một lần search đã bị stop
       // (xảy ra khi nước đi mới đến lúc Stockfish vừa tính xong nước cũ).
       // Loại bỏ nó để không resolve nhầm promise của lần phân tích mới hơn
@@ -350,9 +364,13 @@ export class EngineManager {
     const skillLevel = config.skillLevel ?? 20;
     await this.init();
 
-    // If already searching or pending, safely stop and wait for engine to settle
+    // If already searching or pending, safely stop and wait for engine to settle.
+    // QUAN TRỌNG: phải chờ search cũ dừng hẳn (nhận 'bestmove' của nó) rồi
+    // mới gửi 'position' mới — nếu không WASM crash "unreachable" (đã tái hiện
+    // và xác minh bằng stress test). waitReady() một mình KHÔNG đủ.
     if (this.isSearching || this.pending) {
       this.stop();
+      await this.waitForSearchEnd(2000);
       await this.waitReady(500);
     }
     this.lastEvaluation = 0;
@@ -391,6 +409,26 @@ export class EngineManager {
     });
   }
 
+  /**
+   * Chờ search cũ dừng HẲN sau khi đã gửi 'stop' (tức là đã nhận 'bestmove'
+   * của nó). Khác với waitReady(): 'readyok' trả lời ngay cả khi search cũ
+   * còn đang unwind trong WASM — gửi 'position' lúc đó sẽ crash engine
+   * ("RuntimeError: unreachable"). Luôn có timeout để không kẹt.
+   */
+  waitForSearchEnd(timeout = 2000) {
+    if (!this.awaitingSearchEnd) return Promise.resolve();
+    return new Promise(resolve => {
+      const start = Date.now();
+      const iv = setInterval(() => {
+        if (!this.awaitingSearchEnd || !this.worker || Date.now() - start >= timeout) {
+          clearInterval(iv);
+          this.awaitingSearchEnd = false;
+          resolve();
+        }
+      }, 20);
+    });
+  }
+
   stop() {
     if (this.isContentScript()) {
       if (this.contentScriptPending) {
@@ -413,6 +451,9 @@ export class EngineManager {
       // 'bestmove' cho lần search này. Ghi nợ để loại bỏ nó khi đến,
       // tránh resolve nhầm promise của lần phân tích mới.
       this.staleBestmoveDebt++;
+      // Đánh dấu đang chờ search cũ dừng hẳn — getBestMove() sẽ chờ cờ này
+      // trước khi gửi 'position' mới (chống crash WASM, xem constructor).
+      this.awaitingSearchEnd = true;
     }
     this.isSearching = false;
 

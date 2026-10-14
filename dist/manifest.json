@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChessMate Agent",
-  "version": "0.1.9",
+  "version": "0.1.13",
   "description": "Event-driven chess analysis assistant for practice and bot games.",
   "permissions": [
     "storage",
@@ -21,6 +21,15 @@
       "128": "icons/icon128.png"
     }
   },
+  "commands": {
+    "toggle-chessmate": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Bật/tắt gợi ý ChessMate nhanh"
+    }
+  },
   "background": {
     "service_worker": "service-worker-loader.js",
     "type": "module"
@@ -28,11 +37,12 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.js-loader-Ck7eOZU-.js"
+        "assets/content.js-loader-Cw0GAwDe.js"
       ],
       "matches": [
         "https://www.chess.com/*",
-        "https://chess.com/*"
+        "https://chess.com/*",
+        "https://lichess.org/*"
       ],
       "run_at": "document_idle"
     }
@@ -41,6 +51,7 @@
     {
       "matches": [
         "https://chess.com/*",
+        "https://lichess.org/*",
         "https://www.chess.com/*"
       ],
       "resources": [
@@ -49,10 +60,10 @@
         "assets/*",
         "icons/*",
         "assets/stockfish-DDdgjDOu.js",
-        "assets/llm-client-DyuWgAMc.js",
+        "assets/llm-client-DbdMQysB.js",
         "assets/board-evaluator-BWMLEWCJ.js",
-        "assets/engine-manager-7Cj9Mygn.js",
-        "assets/content.js-Icv7XASy.js"
+        "assets/engine-manager-uRrC7RaA.js",
+        "assets/content.js-DPCJa2x9.js"
       ],
       "use_dynamic_url": false
     }
