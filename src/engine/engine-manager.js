@@ -67,6 +67,10 @@ export class EngineManager {
         this.worker = null;
         this.ready = false;
         this.isSearching = false;
+        // Worker đã chết: mọi khoản nợ bestmove cũ đều vô nghĩa (bestmove của
+        // search cũ sẽ không bao giờ đến). Reset để không loại nhầm bestmove
+        // hợp lệ của worker mới được tạo lại sau này.
+        this.staleBestmoveDebt = 0;
         if (this.pending) {
           this.pending.reject?.(new Error('Engine worker reset'));
           this.pending = null;

@@ -462,10 +462,34 @@ async function boot() {
       analyzeCurrentState();
     }
   });
-  // Pre-warm engine iframe runner for mobile / Safari / Orion support
+  // Pre-warm engine iframe runner CHỈ khi không có offscreen document thật
+  // (mobile / Safari / Orion iOS). Trên desktop đã có offscreen doc riêng —
+  // tạo thêm iframe sẽ khiến 2 Stockfish nhận cùng một chrome.runtime message
+  // và chạy song song mỗi lần phân tích → tốn RAM/CPU, dễ crash WASM
+  // ("Engine worker reset"). Hỏi service worker trước, timeout 1.5s thì
+  // mặc định pre-warm như cũ để không hỏng đường fallback.
   try {
-    engine.ensureEngineIframe();
-  } catch (_) {}
+    const resp = await new Promise((resolve) => {
+      const to = setTimeout(() => resolve(null), 1500);
+      try {
+        chrome.runtime?.sendMessage?.({ type: 'ENSURE_ENGINE' }, (r) => {
+          clearTimeout(to);
+          resolve(r);
+        });
+      } catch (_) {
+        clearTimeout(to);
+        resolve(null);
+      }
+    });
+    const hasRealOffscreen = !chrome.runtime?.lastError && !!resp?.hasOffscreenDocument;
+    if (!hasRealOffscreen) {
+      engine.ensureEngineIframe();
+    } else {
+      logger.info('[ChessMate] Real offscreen document present — skipping iframe pre-warm (single engine).');
+    }
+  } catch (_) {
+    try { engine.ensureEngineIframe(); } catch (_) {}
+  }
 
   chatHud.updateConfig(config);
 

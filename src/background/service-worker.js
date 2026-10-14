@@ -74,7 +74,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {  if (m
 
   if (message.type === 'ENSURE_ENGINE') {
     ensureOffscreen()
-      .then(() => sendResponse({ success: true }))
+      .then(async () => {
+        // Báo cho content script biết có offscreen document THẬT không,
+        // để nó quyết định có cần pre-warm iframe engine không.
+        // (Trên desktop có offscreen thật → không cần iframe; trên iOS không
+        // có chrome.offscreen → cần iframe. Tạo thừa iframe sẽ khiến 2
+        // Stockfish chạy song song mỗi lần phân tích → dễ crash WASM.)
+        let hasDoc = false;
+        try {
+          hasDoc = typeof chrome.offscreen !== 'undefined'
+            && await chrome.offscreen.hasDocument();
+        } catch (_) {}
+        sendResponse({ success: true, hasOffscreenDocument: !!hasDoc });
+      })
       .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
