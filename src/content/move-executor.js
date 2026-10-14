@@ -16,6 +16,8 @@ export async function executeMove(board, uci, { delayMin = 800, delayMax = 2500 
   const parsed = uciToSquares(uci);
   if (!parsed) throw new Error('Invalid UCI move: ' + uci);
 
+  console.info(`[ChessMate] AutoPlay executing move ${uci} (from ${parsed.from} to ${parsed.to})`);
+
   const rect = board.getBoundingClientRect();
   // Dùng cùng logic phát hiện bàn cờ lật với board-extractor (class, data-attribute, tọa độ),
   // vì chess.com không phải lúc nào cũng đánh dấu bằng class "flipped".
