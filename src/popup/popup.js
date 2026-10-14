@@ -288,6 +288,17 @@ async function init() {
   const modeRadio = document.querySelector(`input[name=mode][value=${config.autoPlay ? 'auto' : 'suggest'}]`);
   if (modeRadio) modeRadio.checked = true;
 
+  // Lưu ngay khi đổi chế độ (không cần bấm nút Lưu) để tránh quên
+  document.querySelectorAll('input[name=mode]').forEach(radio => {
+    radio.addEventListener('change', async () => {
+      const isAuto = document.querySelector('input[name=mode]:checked')?.value === 'auto';
+      await setConfig({ autoPlay: isAuto });
+      setStatus('gameStatus', isAuto ? '[TỰ ĐỘNG] ĐÃ BẬT CHẾ ĐỘ TỰ ĐỘNG ĐÁNH' : '[GỢI Ý] ĐÃ CHUYỂN VỀ CHẾ ĐỘ GỢI Ý');
+      notifyActiveTab({ type: 'reanalyze' });
+      setTimeout(() => setStatus('gameStatus', ''), 2500);
+    });
+  });
+
   $('depth').value = config.depth ?? 16;
   $('depthOut').value = config.depth ?? 16;
   $('skillLevel').value = config.skillLevel ?? 20;

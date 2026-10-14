@@ -41,7 +41,7 @@ async function waitForBoard(attempt = 0) {
   return waitForBoard(attempt + 1);
 }
 
-async function analyzeCurrentState(forcedFen = null) {
+async function analyzeCurrentState(forcedFen = null, force = false) {
   if (!config?.enabled) {
     overlay?.clear();
     chatHud?.status('ChessMate: Đang tắt');
@@ -70,7 +70,9 @@ async function analyzeCurrentState(forcedFen = null) {
   }
 
   // Bỏ qua nếu FEN giống hệt lần phân tích trước (tránh lặp do animation/DOM noise)
-  if (!forcedFen && fen === lastAnalyzedFEN) {
+  // Ngoại lệ: khi force=true (user bấm phân tích lại / vừa bật AutoPlay giữa lượt),
+  // vẫn phân tích để AutoPlay có cơ hội đi nước hiện tại.
+  if (!force && !forcedFen && fen === lastAnalyzedFEN) {
     logger.info('[ChessMate] FEN unchanged, skipping analysis.');
     return;
   }
@@ -189,7 +191,7 @@ async function boot() {
 
   // Initialize Chat HUD (Draggable, Minimizable, Unobtrusive)
   chatHud = new ChatHUD({
-    onReanalyze: () => analyzeCurrentState(),
+    onReanalyze: () => analyzeCurrentState(null, true),
     onNewGame: () => {
       startNewGameSession('user_manual_button');
       setTimeout(() => analyzeCurrentState(), 300);
@@ -292,7 +294,7 @@ async function boot() {
 
   chrome.runtime?.onMessage?.addListener((msg) => {
     if (msg?.type === 'reanalyze') {
-      analyzeCurrentState();
+      analyzeCurrentState(null, true);
     }
     if (msg?.type === 'new_game' || msg?.type === 'reset_session') {
       startNewGameSession('runtime_message');
