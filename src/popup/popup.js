@@ -303,6 +303,10 @@ async function init() {
   $('depthOut').value = config.depth ?? 16;
   $('skillLevel').value = config.skillLevel ?? 20;
   $('skillOut').value = config.skillLevel ?? 20;
+  $('delayMin').value = config.delayMin ?? 800;
+  $('delayMinOut').value = config.delayMin ?? 800;
+  $('delayMax').value = config.delayMax ?? 2500;
+  $('delayMaxOut').value = config.delayMax ?? 2500;
 
   $('showHud').checked = config.showHud !== false;
   $('showArrows').checked = config.showArrows !== false;
@@ -346,6 +350,22 @@ async function init() {
   // Lắng nghe thanh trượt
   $('depth').oninput = e => $('depthOut').value = e.target.value;
   $('skillLevel').oninput = e => $('skillOut').value = e.target.value;
+  $('delayMin').oninput = e => {
+    $('delayMinOut').value = e.target.value;
+    // Đảm bảo min không vượt quá max
+    if (parseInt(e.target.value, 10) > parseInt($('delayMax').value, 10)) {
+      $('delayMax').value = e.target.value;
+      $('delayMaxOut').value = e.target.value;
+    }
+  };
+  $('delayMax').oninput = e => {
+    $('delayMaxOut').value = e.target.value;
+    // Đảm bảo max không thấp hơn min
+    if (parseInt(e.target.value, 10) < parseInt($('delayMin').value, 10)) {
+      $('delayMin').value = e.target.value;
+      $('delayMinOut').value = e.target.value;
+    }
+  };
 
   // Lắng nghe thay đổi chế độ tư duy
   $('thinkingMode').onchange = e => {
@@ -377,6 +397,8 @@ async function init() {
       autoPlay: isAuto,
       depth: parseInt($('depth').value, 10),
       skillLevel: parseInt($('skillLevel').value, 10),
+      delayMin: parseInt($('delayMin').value, 10),
+      delayMax: parseInt($('delayMax').value, 10),
       showHud: $('showHud').checked,
       showArrows: $('showArrows').checked
     };
