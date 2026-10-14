@@ -1,7 +1,7 @@
 {
-  "version": "0.1.4",
+  "version": "0.1.5",
   "name": "ChessMate AI Agent",
-  "releaseDate": "2026-10-13",
+  "releaseDate": "2026-10-14",
   "changelog": [
     "Sửa autoPlay click nhầm ô khi bàn cờ lật (dùng chung logic phát hiện lật với board-extractor)",
     "Sửa AI giải thích: model Gemini mặc định gemini-2.0-flash đã bị Google khai tử (404) -> gemini-3.8-flash",

@@ -111,22 +111,29 @@ async function analyzeCurrentState(forcedFen = null) {
 
     // Determine the actual side of the recommended move from the piece at fromSq:
     let moveColor = turn;
+    let fromPiece = null;
     if (best.move && best.move.length >= 4) {
       const fromSq = best.move.slice(0, 2).toLowerCase();
       const fromIdx = squareToIndices(fromSq);
       if (fromIdx) {
         const boardMatrix = fenToBoard(fen);
-        const p = boardMatrix?.[fromIdx.row]?.[fromIdx.col];
-        if (p) {
-          moveColor = (p === p.toUpperCase()) ? 'w' : 'b';
+        fromPiece = boardMatrix?.[fromIdx.row]?.[fromIdx.col] || null;
+        if (fromPiece) {
+          moveColor = (fromPiece === fromPiece.toUpperCase()) ? 'w' : 'b';
         }
       }
     }
 
-    // Stale guard: If it is user's turn on board, but engine returned opponent's move,
-    // discard and trigger fresh analysis for user's turn
-    if (turn === effectiveUserColor && moveColor !== effectiveUserColor) {
-      logger.info(`[ChessMate] Discarded stale opponent move (${best.move}) during user turn (${effectiveUserColor}). Triggering fresh analysis.`);
+    // Stale guard: nước đi phải xuất phát từ một quân của bên đang đi.
+    // - Nếu ô đi TRỐNG (fromPiece null): kết quả stale do race (nước của thế cờ
+    //   cũ lọt vào promise của thế cờ mới) -> bỏ, phân tích lại.
+    // - Nếu là lượt của user mà engine trả nước của đối phương -> bỏ, phân tích lại.
+    if (!fromPiece || (turn === effectiveUserColor && moveColor !== effectiveUserColor)) {
+      if (!fromPiece) {
+        logger.warn(`[ChessMate] Discarded invalid engine move ${best.move}: from-square empty in current FEN (stale result). Triggering fresh analysis.`);
+      } else {
+        logger.info(`[ChessMate] Discarded stale opponent move (${best.move}) during user turn (${effectiveUserColor}). Triggering fresh analysis.`);
+      }
       setTimeout(() => {
         if (!isAnalyzing) analyzeCurrentState();
       }, 100);

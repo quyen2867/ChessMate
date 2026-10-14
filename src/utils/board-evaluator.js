@@ -126,7 +126,7 @@ export function evaluateMoveStrategy({ fen, uci, evaluation, userColor = 'w' }) 
         targetName: PIECE_FULL_NAMES[targetType] || 'Quân',
         movedVal,
         targetVal,
-        advice: `Dùng ${PIECE_FULL_NAMES[movedType]} (${movedVal}đ) tiêu diệt ${PIECE_FULL_NAMES[targetType]} (${targetVal}đ) đối phương! Nước cờ lãi chất cực lớn, gia tăng cách biệt lực lượng rõ rệt.`
+        advice: `Dùng ${PIECE_FULL_NAMES[movedType] || 'Quân cờ'} (${movedVal}đ) tiêu diệt ${PIECE_FULL_NAMES[targetType] || 'quân'} (${targetVal}đ) đối phương! Nước cờ lãi chất cực lớn, gia tăng cách biệt lực lượng rõ rệt.`
       };
     }
 
@@ -143,7 +143,7 @@ export function evaluateMoveStrategy({ fen, uci, evaluation, userColor = 'w' }) 
           targetName: PIECE_FULL_NAMES[targetType] || 'Quân',
           movedVal,
           targetVal,
-          advice: `Bạn đang dẫn trước lực lượng! Quy tắc Đại Kiện tướng: Đổi ${PIECE_FULL_NAMES[movedType]} lấy ${PIECE_FULL_NAMES[targetType]} để triệt tiêu mọi khả năng phản công của đối thủ, đưa thẳng về tàn cuộc thắng chắc.`
+          advice: `Bạn đang dẫn trước lực lượng! Quy tắc Đại Kiện tướng: Đổi ${PIECE_FULL_NAMES[movedType] || 'quân'} lấy ${PIECE_FULL_NAMES[targetType] || 'quân'} để triệt tiêu mọi khả năng phản công của đối thủ, đưa thẳng về tàn cuộc thắng chắc.`
         };
       } else if (myMaterialLead < -1.5 || (userColor === 'w' ? evalNum < -2 : evalNum > 2)) {
         // Đang thua quân -> CẨN TRỌNG KHI ĐỔI
@@ -169,7 +169,7 @@ export function evaluateMoveStrategy({ fen, uci, evaluation, userColor = 'w' }) 
           targetName: PIECE_FULL_NAMES[targetType] || 'Quân',
           movedVal,
           targetVal,
-          advice: `Đổi ${PIECE_FULL_NAMES[movedType]} lấy ${PIECE_FULL_NAMES[targetType]} ngang giá (${movedVal}đ = ${targetVal}đ), duy trì thế trận cân bằng và giành quyền kiểm soát ô chiến lược.`
+          advice: `Đổi ${PIECE_FULL_NAMES[movedType] || 'quân'} lấy ${PIECE_FULL_NAMES[targetType] || 'quân'} ngang giá (${movedVal}đ = ${targetVal}đ), duy trì thế trận cân bằng và giành quyền kiểm soát ô chiến lược.`
         };
       }
     }
