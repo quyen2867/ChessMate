@@ -1,8 +1,41 @@
 # ChessMate Chess — App cờ vua iOS độc lập
 
+> **Cách dùng chính (khuyên dùng): TIÊM vào app ChessMate có sẵn** — không tạo app mới.
+> Xem mục "Tiêm vào app ChessMate (converter)" bên dưới.
+
 App cờ vua **thật sự** cho iPhone/iPad: mở app là chơi ngay với máy (Stockfish),
 không cần Safari, không cần extension. Toàn bộ tính năng phân tích của ChessMate
 được "tiêm" thẳng vào app.
+
+## Tiêm vào app ChessMate (converter) — không làm app mới
+
+Dùng khi bạn đã có project `ChessMate` do `safari-web-extension-converter` tạo ra
+(cái app mở lên chỉ hiện dòng "You can turn on ChessMate's Safari extension").
+Cách này biến **chính app đó** thành app cờ vua thật, extension Safari vẫn giữ
+nguyên chạy trong Safari.
+
+Trên Mac, trong project ChessMate đã mở sẵn:
+
+1. Kéo thư mục `ios-chess-app/ChessMateChess/web` từ repo vào khung Project
+   navigator của Xcode, thả vào dưới app target:
+   - Tick **"Copy items if needed"**
+   - Chọn **"Create folder references"** (quang trọng: phải là folder xanh dương,
+     không phải group vàng — để giữ nguyên cấu trúc thư mục)
+   - Tick add vào **app target** (ChessMate, KHÔNG phải ChessMate Extension)
+2. Mở file `ViewController.swift` của **app target** → xóa hết nội dung cũ →
+   paste toàn bộ nội dung file `ios-chess-app/inject/ViewController.swift`
+   (giữ nguyên tên class `ViewController` cho khớp storyboard).
+3. **Cmd+R** để build & cài — mở app là chơi cờ ngay.
+   Muốn file IPA: làm như cũ (Archive → lấy `.app` trong `.xcarchive` →
+   thư mục `Payload` → zip → `.ipa` → ký bằng cert của bạn).
+
+Xong: **một app duy nhất** — vừa là app cờ vua thật, vừa chứa Safari extension
+dùng trong Safari như cũ.
+
+## Phương án 2: project app độc lập
+
+Nếu muốn app cờ vua tách riêng, mở `ios-chess-app/ChessMateChess.xcodeproj`
+bằng Xcode → chọn Team → Cmd+R. (Xem chi tiết build ở phần dưới.)
 
 ## Tính năng
 
