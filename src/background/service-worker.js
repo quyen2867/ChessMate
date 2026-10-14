@@ -32,8 +32,7 @@ async function ensureOffscreen() {
   await creatingOffscreenPromise;
 }
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get().then(current => {
+chrome.runtime.onInstalled.addListener(() => {  chrome.storage.local.get().then(current => {
     if (!Object.keys(current).length) {
       chrome.storage.local.set({
         enabled: true,
@@ -53,6 +52,9 @@ chrome.runtime.onInstalled.addListener(() => {
         showTopMoves: true,
         turnChime: true,
         ponder: true,
+        ttsEnabled: true,
+        showEvalBar: true,
+        pauseOnHidden: true,
         hudMinimized: false
       });
     }
@@ -60,8 +62,15 @@ chrome.runtime.onInstalled.addListener(() => {
   ensureOffscreen().catch(() => {});
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.target === 'offscreen') return;
+// Phím tắt bật/tắt gợi ý nhanh (Ctrl+Shift+S / Command+Shift+S)
+chrome.commands?.onCommand.addListener((command) => {
+  if (command !== 'toggle-chessmate') return;
+  chrome.storage.local.get('enabled').then((result) => {
+    chrome.storage.local.set({ enabled: !result.enabled });
+  }).catch(() => {});
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {  if (message.target === 'offscreen') return;
 
   if (message.type === 'ENSURE_ENGINE') {
     ensureOffscreen()

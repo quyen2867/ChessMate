@@ -1,15 +1,26 @@
 import { BoardObserver } from './board-observer.js';
 import { findBoardElement, resetExtractorState, getUserColor } from './board-extractor.js';
+import {
+  isLichessSite, findLichessBoard, getLichessOrientation, getLichessFEN,
+  resetLichessState, pickLichessPromotion, LichessObserver,
+} from './lichess-adapter.js';
 import { Overlay } from './overlay.js';
 import { ChatHUD } from './chat-hud.js';
 import { executeMove } from './move-executor.js';
 import { EngineManager } from '../engine/engine-manager.js';
 import { getConfig, onChange } from '../storage/config-manager.js';
 import { clearLlmCache } from '../ai/llm-client.js';
-import { fenToBoard, squareToIndices, applyUciMove } from '../utils/chess-translator.js';
+import { fenToBoard, squareToIndices, applyUciMove, translateMoveToVietnamese } from '../utils/chess-translator.js';
 import { logger } from '../utils/logger.js';
 
-const observer = new BoardObserver();
+// ---- Site adapter: chess.com mặc định, lichess.org khi detect được ----
+const IS_LICHESS = isLichessSite();
+const observer = IS_LICHESS ? new LichessObserver() : new BoardObserver();
+const findBoard = IS_LICHESS ? findLichessBoard : findBoardElement;
+const resetBoardState = IS_LICHESS ? resetLichessState : resetExtractorState;
+function detectUserColor(b) {
+  return IS_LICHESS ? getLichessOrientation(b) : getUserColor(b);
+}
 const engine = new EngineManager();
 let config;
 let overlay;
@@ -80,23 +91,45 @@ function flashTurnTitle() {
   } catch (_) {}
 }
 
+// ---- Đọc gợi ý bằng giọng nói tiếng Việt (Web Speech API, không cần mạng) ----
+function speakSuggestion(uci, fen) {
+  try {
+    const synth = window.speechSynthesis;
+    if (!synth) return;
+    synth.cancel(); // dừng câu đang đọc dở nếu có
+    const t = translateMoveToVietnamese(uci, fen);
+    const text = t.short || t.title || uci;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'vi-VN';
+    utter.rate = 1.05;
+    utter.pitch = 1;
+    synth.speak(utter);
+  } catch (_) {}
+}
+
+function stopSpeech() {
+  try { window.speechSynthesis?.cancel(); } catch (_) {}
+}
+
 function startNewGameSession(reason = 'manual') {
   logger.info(`[ChessMate] Starting new game session (${reason})`);
   _analysisToken++;
   engine.stop();
   overlay?.clear();
+  overlay?.hideEvalBar();
   lastAnalyzedFEN = null;
   nextPendingFEN = null;
   ponderState = null;
   _lastChimeFen = null;
+  stopSpeech();
   observer.reset();
-  resetExtractorState();
+  resetBoardState();
   chatHud?.reset();
   clearLlmCache();
 }
 
 async function waitForBoard(attempt = 0) {
-  const el = findBoardElement();
+  const el = findBoard();
   if (el) return el;
   if (attempt >= 12) return null;
   await new Promise(resolve => setTimeout(resolve, Math.min(3000, 150 * 1.5 ** attempt)));
@@ -147,7 +180,7 @@ async function handleAnalysisResult(fen, best) {
   }
 
   const turn = fen.split(' ')[1] || 'w';
-  const effectiveUserColor = chatHud?.sideOverride || getUserColor(board);
+  const effectiveUserColor = chatHud?.sideOverride || detectUserColor(board);
 
   // Determine the actual side of the recommended move from the piece at fromSq:
   let moveColor = turn;
@@ -190,6 +223,13 @@ async function handleAnalysisResult(fen, best) {
     _lastChimeFen = fen;
   }
 
+  // Đọc gợi ý bằng giọng nói khi đến lượt (không cần nhìn màn hình)
+  if (isMyTurn && config.ttsEnabled !== false) {
+    speakSuggestion(best.move, fen);
+  } else {
+    stopSpeech();
+  }
+
   // Update Chat HUD with side, turn context, shortest path note and top candidates
   chatHud?.updateAnalysis({
     fen,
@@ -211,8 +251,23 @@ async function handleAnalysisResult(fen, best) {
     overlay?.clear();
   }
 
+  // Thanh eval bar: cập nhật sau mỗi lần phân tích (cả lượt mình lẫn đối thủ)
+  if (config.showEvalBar !== false) {
+    overlay?.updateEvalBar(best.evaluation);
+  } else {
+    overlay?.hideEvalBar();
+  }
+
   if (isMyTurn && config.autoPlay) {
-    await executeMove(board, best.move, config);
+    // Lichess: truyền orientation + picker cho dialog phong cấp của lichess
+    const moveOpts = IS_LICHESS
+      ? {
+          ...config,
+          flipped: detectUserColor(board) === 'b',
+          onPromotion: (promoPiece) => pickLichessPromotion(promoPiece, detectUserColor(board)),
+        }
+      : config;
+    await executeMove(board, best.move, moveOpts);
   }
 
   // Khi đối thủ đang nghĩ: tính trước nước đáp trả cho thế cờ dự đoán
@@ -385,7 +440,7 @@ async function boot() {
   } else {
     logger.info('Board not found immediately, observing DOM for board appearance...');
     const bodyObserver = new MutationObserver(() => {
-      const found = findBoardElement();
+      const found = findBoard();
       if (found) {
         bodyObserver.disconnect();
         initBoard(found);
@@ -401,7 +456,7 @@ async function boot() {
       logger.info(`URL navigation detected from ${lastUrl} to ${window.location.href}`);
       lastUrl = window.location.href;
       startNewGameSession('url_change');
-      const b = findBoardElement();
+      const b = findBoard();
       if (b && b !== board) {
         initBoard(b);
       } else if (b) {
@@ -422,6 +477,20 @@ async function boot() {
       lastAnalyzedFEN = null;  // reset khi tắt để khi bật lại sẽ phân tích mới
     } else if (wasDisabled && config.enabled) {
       lastAnalyzedFEN = null;  // force re-analyze khi bật lại
+      analyzeCurrentState();
+    }
+  });
+
+  // Tự dừng engine khi tab bị ẩn (tiết kiệm pin/CPU), mở lại thì phân tích tiếp
+  document.addEventListener('visibilitychange', () => {
+    if (config?.pauseOnHidden === false) return;
+    if (document.visibilityState === 'hidden') {
+      engine.stop();
+      ponderState = null;
+      stopSpeech();
+      logger.info('[ChessMate] Tab hidden — engine paused to save battery.');
+    } else if (config?.enabled) {
+      lastAnalyzedFEN = null;  // force phân tích mới khi quay lại tab
       analyzeCurrentState();
     }
   });

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChessMate Agent",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Event-driven chess analysis assistant for practice and bot games.",
   "permissions": [
     "storage",
@@ -21,6 +21,15 @@
       "128": "icons/icon128.png"
     }
   },
+  "commands": {
+    "toggle-chessmate": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Bật/tắt gợi ý ChessMate nhanh"
+    }
+  },
   "background": {
     "service_worker": "src/background/service-worker.js",
     "type": "module"
@@ -29,7 +38,8 @@
     {
       "matches": [
         "https://www.chess.com/*",
-        "https://chess.com/*"
+        "https://chess.com/*",
+        "https://lichess.org/*"
       ],
       "js": [
         "src/content/content.js"
@@ -47,7 +57,8 @@
       ],
       "matches": [
         "https://www.chess.com/*",
-        "https://chess.com/*"
+        "https://chess.com/*",
+        "https://lichess.org/*"
       ]
     }
   ],

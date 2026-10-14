@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { boardToPlacement, isValidFen, uciToSquares } from '../src/utils/chess-utils.js';
+import { boardToPlacement, isValidFen, uciToSquares, evalToWhitePercent } from '../src/utils/chess-utils.js';
 import { parsePieceText } from '../src/content/board-extractor.js';
 import { SQUARE_SELECTORS } from '../src/utils/constants.js';
 
@@ -31,3 +31,14 @@ test('generates accurate Chess.com square selectors', () => {
   assert.ok(e2Selectors.includes('.square-52'));
 });
 
+
+test('evalToWhitePercent scales centipawns to 0-100', () => {
+  assert.equal(evalToWhitePercent(0), 50);
+  assert.equal(evalToWhitePercent(1.5), 55);
+  assert.equal(evalToWhitePercent(-1.5), 45);
+  assert.equal(evalToWhitePercent(20), 100);   // clamped
+  assert.equal(evalToWhitePercent(-20), 0);    // clamped
+  assert.equal(evalToWhitePercent('#3'), 100);  // white mates
+  assert.equal(evalToWhitePercent('#-2'), 0);  // black mates
+  assert.equal(evalToWhitePercent('oops'), 50);
+});

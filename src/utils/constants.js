@@ -40,6 +40,12 @@ export const DEFAULT_CONFIG = Object.freeze({
   showOverlay: true,
   showArrows: true,
   showHud: true,
+  showTopMoves: true,
+  turnChime: true,
+  ponder: true,
+  ttsEnabled: true,
+  showEvalBar: true,
+  pauseOnHidden: true,
   hudMinimized: false
 });
 

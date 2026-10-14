@@ -28,3 +28,19 @@ export function isValidFen(fen) {
 }
 export function uciToSquares(uci) { const m = /^([a-h][1-8])([a-h][1-8])([qrbn])?$/.exec(uci || ''); return m ? { from: m[1], to: m[2], promotion: m[3] } : null; }
 export function squareToCoords(square, rect, flipped = false) { const file = FILES.indexOf(square[0]), rank = Number(square[1]) - 1; const x = flipped ? 7 - file : file, y = flipped ? rank : 7 - rank; return { x: rect.left + (x + .5) * rect.width / 8, y: rect.top + (y + .5) * rect.height / 8 }; }
+
+/**
+ * Converts an engine evaluation (pawn units, white-relative; or '#N' mate
+ * string) to a 0-100 percentage of the eval bar filled white.
+ * 50 = equal, 100 = white is mating, 0 = black is mating.
+ */
+export function evalToWhitePercent(evaluation) {
+  if (typeof evaluation === 'string') {
+    const m = /^#(-?\d+)$/.exec(evaluation.trim());
+    if (m) return parseInt(m[1], 10) > 0 ? 100 : 0;
+  }
+  const cp = Number(evaluation) * 100;
+  if (Number.isNaN(cp)) return 50;
+  const clamped = Math.max(-1500, Math.min(1500, cp));
+  return 50 + (clamped / 1500) * 50;
+}

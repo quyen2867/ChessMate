@@ -1,4 +1,6 @@
 import { findBoardElement, isBoardFlipped } from './board-extractor.js';
+import { evalToWhitePercent } from '../utils/chess-utils.js';
+import { formatEvaluationParts } from '../utils/chess-translator.js';
 
 export function getSquareBoardPos(square, flipped = false) {
   if (!square || square.length < 2) return null;
@@ -23,7 +25,7 @@ export class Overlay {
     this.lastArrow = null;
 
     // Remove any existing overlay across document
-    document.querySelectorAll('#chessmate-board-svg, #chessmate-overlay-root').forEach(el => el.remove());
+    document.querySelectorAll('#chessmate-board-svg, #chessmate-overlay-root, #chessmate-evalbar').forEach(el => el.remove());
 
     this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     this.svg.id = 'chessmate-board-svg';
@@ -140,10 +142,94 @@ export class Overlay {
     this.svg.innerHTML = '';
   }
 
+  // ---- Thanh đánh giá (eval bar) vẽ dọc cạnh trái bàn cờ ----
+  createEvalBar() {
+    if (this.evalBar?.isConnected) return;
+    const bar = document.createElement('div');
+    bar.id = 'chessmate-evalbar';
+    bar.style.cssText = `
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -17px;
+      width: 11px;
+      background: #151515;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 3px;
+      overflow: visible;
+      pointer-events: none;
+      z-index: 99;
+      display: none;
+    `;
+    const fill = document.createElement('div');
+    fill.id = 'chessmate-evalbar-fill';
+    fill.style.cssText = `
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(to top, #e8e8e8, #ffffff);
+      border-radius: 2px;
+      transition: height 0.35s ease;
+    `;
+    const label = document.createElement('div');
+    label.id = 'chessmate-evalbar-label';
+    label.style.cssText = `
+      position: absolute;
+      top: -21px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 9px;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(0,0,0,0.75);
+      padding: 1px 4px;
+      border-radius: 3px;
+      white-space: nowrap;
+      font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif;
+    `;
+    label.textContent = '';
+    bar.appendChild(fill);
+    bar.appendChild(label);
+    this.evalBar = bar;
+    this.evalFill = fill;
+    this.evalLabel = label;
+    if (this.ensureAttached()) {
+      this.board.appendChild(bar);
+    }
+  }
+
+  updateEvalBar(evaluation) {
+    if (!this.ensureAttached()) return;
+    this.createEvalBar();
+    if (!this.evalBar) return;
+    // Re-attach if board changed
+    if (this.evalBar.parentElement !== this.board) {
+      this.board.appendChild(this.evalBar);
+    }
+    const pct = evalToWhitePercent(evaluation);
+    this.evalFill.style.height = `${Math.max(0, Math.min(100, pct))}%`;
+    const parts = formatEvaluationParts(evaluation);
+    this.evalLabel.textContent = parts.numeric || '';
+    this.evalBar.style.display = 'block';
+    this.lastEval = evaluation;
+  }
+
+  hideEvalBar() {
+    this.lastEval = null;
+    if (this.evalBar) this.evalBar.style.display = 'none';
+  }
+
   destroy() {
     this.lastArrow = null;
+    this.lastEval = null;
     this.svg?.remove();
     this.svg = null;
+    this.evalBar?.remove();
+    this.evalBar = null;
+    this.evalFill = null;
+    this.evalLabel = null;
     this.board = null;
   }
 }
