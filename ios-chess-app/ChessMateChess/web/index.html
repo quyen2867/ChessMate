@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ChessMate — Cờ Vua</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <!-- Header -->
+  <header id="topbar">
+    <div class="brand">
+      <span class="brand-icon">♞</span>
+      <span class="brand-name">ChessMate</span>
+    </div>
+    <div class="top-actions">
+      <button id="btn-sound" class="icon-btn" title="Đọc gợi ý">🔊</button>
+      <button id="btn-flip" class="icon-btn" title="Xoay bàn cờ">⇄</button>
+      <button id="btn-new" class="icon-btn primary" title="Ván mới">＋</button>
+    </div>
+  </header>
+
+  <!-- Status line -->
+  <div id="statusbar">
+    <span id="turn-badge">Trắng đi</span>
+    <span id="opening-name">Ván cờ mới</span>
+  </div>
+
+  <!-- Board + eval -->
+  <div id="board-row">
+    <div id="evalbar" title="Đánh giá thế cờ">
+      <div id="evalbar-black"></div>
+      <div id="evalbar-white"></div>
+      <div id="evalbar-label">0.0</div>
+    </div>
+    <div id="board-wrap">
+      <div id="board"></div>
+      <svg id="arrows" viewBox="0 0 800 800" preserveAspectRatio="none"></svg>
+      <div id="coords"></div>
+    </div>
+  </div>
+
+  <!-- Engine thinking indicator -->
+  <div id="thinking" class="hidden">
+    <span class="spinner"></span><span id="thinking-text">Máy đang nghĩ…</span>
+  </div>
+
+  <!-- Suggestions (Top 3) -->
+  <section id="suggestions">
+    <div class="section-title">
+      <span>Gợi ý nước đi</span>
+      <button id="btn-speak" class="mini-btn">🔈 Đọc</button>
+    </div>
+    <div id="suggestion-list">
+      <div class="suggestion empty">Chạm vào quân của bạn để đi. Máy sẽ phân tích và gợi ý tại đây.</div>
+    </div>
+  </section>
+
+  <!-- Controls -->
+  <section id="controls">
+    <div class="ctl-row">
+      <label>Bạn cầm</label>
+      <div class="seg" id="seg-color">
+        <button data-color="w" class="active">♔ Trắng</button>
+        <button data-color="b">♚ Đen</button>
+      </div>
+    </div>
+    <div class="ctl-row">
+      <label>Độ khó</label>
+      <div class="seg" id="seg-diff">
+        <button data-diff="easy">Dễ</button>
+        <button data-diff="medium" class="active">Vừa</button>
+        <button data-diff="hard">Khó</button>
+      </div>
+    </div>
+    <div class="ctl-row">
+      <label>Tư duy</label>
+      <select id="sel-mode"></select>
+    </div>
+    <div class="ctl-row">
+      <button id="btn-undo" class="wide-btn">↩ Đi lại</button>
+      <button id="btn-hint" class="wide-btn accent">💡 Gợi ý ngay</button>
+    </div>
+  </section>
+
+  <!-- Move history -->
+  <section id="history-sec">
+    <div class="section-title"><span>Lịch sử ván cờ</span></div>
+    <ol id="move-history"></ol>
+  </section>
+
+  <footer id="result" class="hidden"></footer>
+</div>
+
+<!-- Promotion picker -->
+<div id="promo-modal" class="hidden">
+  <div class="promo-box">
+    <div class="promo-title">Phong cấp thành</div>
+    <div class="promo-choices">
+      <button data-promo="q">♕<span>Hậu</span></button>
+      <button data-promo="r">♖<span>Xe</span></button>
+      <button data-promo="b">♗<span>Tượng</span></button>
+      <button data-promo="n">♘<span>Mã</span></button>
+    </div>
+  </div>
+</div>
+
+<script src="vendor/chess.min.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
