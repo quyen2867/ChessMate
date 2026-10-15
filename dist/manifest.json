@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChessMate Agent",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Event-driven chess analysis assistant for practice and bot games.",
   "permissions": [
     "storage",
@@ -37,7 +37,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/content.js-loader-Cw0GAwDe.js"
+        "assets/content.js-loader-640u5pYr.js"
       ],
       "matches": [
         "https://www.chess.com/*",
@@ -59,11 +59,11 @@
         "src/offscreen/*",
         "assets/*",
         "icons/*",
-        "assets/stockfish-DDdgjDOu.js",
+        "assets/stockfish-Z5sPOhoF.js",
         "assets/llm-client-DbdMQysB.js",
         "assets/board-evaluator-BWMLEWCJ.js",
-        "assets/engine-manager-uRrC7RaA.js",
-        "assets/content.js-DPCJa2x9.js"
+        "assets/engine-manager-Bz8TB2H8.js",
+        "assets/content.js-DURjp3wo.js"
       ],
       "use_dynamic_url": false
     }

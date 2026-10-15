@@ -1,8 +1,9 @@
 {
-  "version": "0.1.9",
+  "version": "0.1.14",
   "name": "ChessMate AI Agent",
-  "releaseDate": "2026-10-14",
+  "releaseDate": "2026-10-15",
   "changelog": [
+    "Cập nhật engine lên bản build Stockfish 19 mới nhất (stockfish.js 19.0.1; engine vốn đã là Stockfish 19 từ trước) — kiểm tra lại: phân tích thế cờ mẫu OK, stress test 40 chu kỳ stop/phân tích dồn dập không tái hiện lỗi 'Engine worker reset', 59/59 unit test pass",
     "Hiện TOP 3 nước gợi ý trong HUD (tận dụng MultiPV 3 engine đã tính sẵn)",
     "Chuông báo + nháy tiêu đề tab khi đến lượt bạn (kèm công tắc trong popup)",
     "Tính trước khi đối thủ đang nghĩ (ponder): đoán nước đối thủ, tính sẵn nước đáp trả — đến lượt là có ngay gợi ý/AutoPlay",
